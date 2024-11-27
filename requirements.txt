@@ -1,0 +1,8 @@
+pyfiglet
+colorama
+faker
+halo
+rich
+pydantic
+langchain
+langchain_ollama
