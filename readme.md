@@ -2,13 +2,7 @@
 
 Welcome to the Mafia Game Simulation! This project simulates the popular social deduction game *Mafia* using AI agents. Each player in the game is controlled by an AI agent that makes decisions based on their role and the current game state.
 
-## Game Roles
-
-- **Narrator**: Guides the players through the game with vivid, engaging narration.
-- **Detective**: Investigates players each night to uncover their allegiance.
-- **Doctor**: Protects one player each night from being eliminated.
-- **Mafia**: Collaborates with other Mafia members to eliminate non-Mafia players.
-- **Villager**: Works to identify and vote out the Mafia members during the day phase.
+![Mafia Game Simulation](https://i.imgur.com/oxKi03o.png)
 
 [Here](https://en.wikipedia.org/wiki/Mafia_(party_game)) is a detailed description of the game rules.
 
