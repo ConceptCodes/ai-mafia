@@ -10,9 +10,6 @@ class VillagerAgent(BaseAgent):
         )
 
     def act(self, phase, goal=None):
-        task_description = (
-            "discuss and share your suspicion about who might be Mafia. "
-            "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response. "
-        )
+        task_description = "discuss and share your suspicion about who might be Mafia. "
         (player_name, _) = super().act(task_description, phase)
         return player_name

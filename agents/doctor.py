@@ -13,12 +13,13 @@ class DoctorAgent(BaseAgent):
         if phase == "night":
             task_description = (
                 "Choose one player to protect from elimination. "
-                "You cannot protect the same player two nights in a row."
+                "You cannot protect the same player two nights in a row. "
+                "You can also choose to protect yourself from elimination. "
+                "Remember that you are talking to the narrator, not the other players."
             )
         else:
             task_description = (
                 "Discuss and share your suspicion about who might be Mafia."
-                "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response. "
             )
 
         (player_name, _) = super().act(task_description, phase)
