@@ -19,6 +19,7 @@ narrator_template = PromptTemplate(
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
         "Chat History:\n{chat_history}\n\n"
+        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={
         "format_instructions": narrator_parser.get_format_instructions()
@@ -43,6 +44,7 @@ detective_template = PromptTemplate(
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
         "Chat History:\n{chat_history}\n\n"
+        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )
@@ -65,6 +67,7 @@ doctor_template = PromptTemplate(
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
         "Chat History:\n{chat_history}\n\n"
+        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )
@@ -87,6 +90,7 @@ mafia_template = PromptTemplate(
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
         "Chat History:\n{chat_history}\n\n"
+        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )
@@ -109,6 +113,7 @@ villager_template = PromptTemplate(
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
         "Chat History:\n{chat_history}\n\n"
+        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )
