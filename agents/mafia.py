@@ -34,6 +34,7 @@ class MafiaAgent(BaseAgent):
             task_description = (
                 "Engage in discussions to identify potential Mafia members. "
                 "Share your suspicions and observations, aiming to mislead non-Mafia players while protecting your teams true identity."
+                "Remember you are talking in a public chat, so be careful with your words."
             )
             (player_name, _) = super().act(task_description, phase)
             return player_name
