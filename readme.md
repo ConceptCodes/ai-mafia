@@ -6,6 +6,10 @@ Welcome to the Mafia Game Simulation! This project simulates the popular social 
 
 [Here](https://en.wikipedia.org/wiki/Mafia_(party_game)) is a detailed description of the game rules.
 
+## Pre-requisites
+- Python 3.6 or higher
+- [Ollama](https://ollama.com/)
+
 ## AI Agents
 This is a v1 of this simulation. We have a *BaseAgent* class that all agents inherit from. 
 Every Agent is given a task to perform in the game. The task is to be implemented in the `act` method.
