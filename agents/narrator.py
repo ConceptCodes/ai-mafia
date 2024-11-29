@@ -9,7 +9,7 @@ class NarratorAgent(BaseAgent):
             name="Narrator",
             role=NARRATOR_ROLE,
             game_state=game_state,
-            llm=get_llm(temperature=0.7),
+            llm=get_llm(),
         )
 
     def act(self, phase, goal=None):

@@ -26,6 +26,7 @@ class DetectiveAgent(BaseAgent):
                 "Reflect on the previous events and the behaviors exhibited by other players to inform your decisions. "
                 "Be prepared to adjust your strategies based on new information and the evolving dynamics of the game."
                 "Discuss and share your suspicion about who might be Mafia."
+                "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response. "
             )
             (player_name, _) = super().act(task_description, phase)
             return player_name

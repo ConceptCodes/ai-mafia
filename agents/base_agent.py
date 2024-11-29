@@ -67,7 +67,7 @@ class BaseAgent:
 
     def act(self, task_description: str, phase: str, goal=None):
         chat_logs = get_role_specific_chat_log(
-            game_state=self.game_state, role=self.role, should_reverse=True
+            game_state=self.game_state, role=self.role, should_reverse=False
         )
         game_state = get_role_specific_game_state(
             game_state=self.game_state, name=self.name, role=self.role

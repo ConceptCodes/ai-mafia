@@ -15,11 +15,10 @@ narrator_template = PromptTemplate(
         "Your task is to guide the players through the phases of the game with vivid, engaging narration that captures the stakes and keeps everyone on edge. "
         "Use rich descriptions to set the scene, highlight significant actions, and maintain suspense without revealing any hidden roles or identities. "
         "React to unexpected twists and emphasize the emotions and conflicts between players.\n\n"
-        "{format_instructions}\n\n"
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
+        "{format_instructions}\n\n"
         "Chat History:\n{chat_history}\n\n"
-        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={
         "format_instructions": narrator_parser.get_format_instructions()
@@ -40,11 +39,10 @@ detective_template = PromptTemplate(
         "Be sure to read the chat log to prevent repeating information other players have already said. "
         "Respond with clarity and subtlety, ensuring you don't reveal your role or identity. "
         "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response.\n\n"
-        "{format_instructions}\n\n"
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
+        "{format_instructions}\n\n"
         "Chat History:\n{chat_history}\n\n"
-        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )
@@ -63,11 +61,10 @@ doctor_template = PromptTemplate(
         "Be sure to read the chat log to prevent repeating information other players have already said. "
         "Respond with tact and discretion, carefully balancing your insights without revealing your role or identity. "
         "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response.\n\n"
-        "{format_instructions}\n\n"
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
+        "{format_instructions}\n\n"
         "Chat History:\n{chat_history}\n\n"
-        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )
@@ -86,11 +83,10 @@ mafia_template = PromptTemplate(
         "Be sure to read the chat log to prevent repeating information other players have already said. "
         "Respond subtly and with precision, sowing doubt and suspicion without revealing your role. "
         "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response.\n\n"
-        "{format_instructions}\n\n"
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
+        "{format_instructions}\n\n"
         "Chat History:\n{chat_history}\n\n"
-        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )
@@ -109,11 +105,10 @@ villager_template = PromptTemplate(
         "Be sure to read the chat log to prevent repeating information other players have already said. "
         "Respond thoughtfully and collaboratively, building trust while being careful not to reveal too much. "
         "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response.\n\n"
-        "{format_instructions}\n\n"
         "Current Game State:\n{game_state}\n\n"
         "Task Description:\n{task_description}\n\n"
+        "{format_instructions}\n\n"
         "Chat History:\n{chat_history}\n\n"
-        "YOUR RESPONSE MUST ADHERE TO THE FORMAT INSTRUCTIONS ABOVE."
     ),
     partial_variables={"format_instructions": common_parser.get_format_instructions()},
 )

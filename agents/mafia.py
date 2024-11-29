@@ -33,8 +33,10 @@ class MafiaAgent(BaseAgent):
         else:
             task_description = (
                 "Engage in discussions to identify potential Mafia members. "
-                "Share your suspicions and observations, aiming to mislead non-Mafia players while protecting your teams true identity."
-                "Remember you are talking in a public chat, so be careful with your words."
+                "Share your suspicions and observations, aiming to mislead non-Mafia players while protecting your teams true identity. " 
+                "Remember you are talking in a public chat, so be careful with your words. "
+                "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response. "
+                "If you are the target of suspicion, respond with tact and discretion, carefully balancing your insights without revealing your role or identity."
             )
             (player_name, _) = super().act(task_description, phase)
             return player_name

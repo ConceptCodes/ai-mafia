@@ -18,6 +18,7 @@ class DoctorAgent(BaseAgent):
         else:
             task_description = (
                 "Discuss and share your suspicion about who might be Mafia."
+                "Consider the complete conversation history, the additional context, your current situation, emotional state, and goals when writing a response. "
             )
 
         (player_name, _) = super().act(task_description, phase)
