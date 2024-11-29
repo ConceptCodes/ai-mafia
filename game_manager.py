@@ -107,12 +107,12 @@ class GameManager:
             f"\n============ {Fore.CYAN}Night {get_current_day(self.game_state)} begins.{Style.RESET_ALL} ============"
         )
 
-        # Narrator announces the beginning of the night phase
-        players = get_players(self.game_state)
-        narrator = next(
-            player for player in players.values() if player.role == NARRATOR_ROLE
-        )
-        narrator.agent.act("night", goal="introduce")
+        if self.game_state.day == 1 and self.game_state.phase == "night":
+            players = get_players(self.game_state)
+            narrator = next(
+                player for player in players.values() if player.role == NARRATOR_ROLE
+            )
+            narrator.agent.act("night", goal="introduce")
 
         self.mafia_discussion_and_target_selection()
         self.doctor_protection()
@@ -171,13 +171,17 @@ class GameManager:
         protection_target = None
         players = get_players(game_state=self.game_state)
         doctor = next(
-            (player_name, player_info)
-            for player_name, player_info in players.items()
-            if player_info.role == DOCTOR_ROLE
-            and is_alive(game_state=self.game_state, player_name=player_name)
+            (
+                (player_name, player_info)
+                for player_name, player_info in players.items()
+                if player_info.role == DOCTOR_ROLE
+                and is_alive(game_state=self.game_state, player_name=player_name)
+            ),
+            None,
         )
 
         if doctor is None:
+            print("Doctor is not alive.")
             return
 
         player_name, player_info = doctor
