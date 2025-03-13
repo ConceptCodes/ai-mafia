@@ -22,5 +22,5 @@ class DoctorAgent(BaseAgent):
                 "Discuss and share your suspicion about who might be Mafia."
             )
 
-        (player_name, _) = super().act(task_description, phase)
-        return player_name
+        response = super().act(task_description, phase)
+        return response.player_name

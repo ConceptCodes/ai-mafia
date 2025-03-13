@@ -2,7 +2,7 @@ import time
 from typing import Dict, List
 import faker
 from langchain_core.output_parsers import JsonOutputParser
-
+from tabulate import tabulate
 
 from lib import constants
 from lib.constants import (
@@ -21,10 +21,10 @@ from lib.constants import (
     LOG_FORMAT,
 )
 from lib.models import (
-    ActionResponse,
     ChatLogEntry,
     ConversationalResponse,
     InvestigateAction,
+    NarratorResponse,
     PlayerInfo,
     GameState,
 )
@@ -102,8 +102,22 @@ def get_player_role(game_state: GameState, player_name: str) -> str:
     return game_state.players[player_name].role
 
 
-def get_players(game_state: GameState) -> Dict[str, PlayerInfo]:
+def get_players(game_state: GameState, exclude_narrator=False) -> Dict[str, PlayerInfo]:
     return dict(sorted(game_state.players.items(), key=lambda x: fake.random_int()))
+
+
+def display_players(game_state: GameState) -> None:
+    players = get_players(game_state)
+    players.pop("Narrator")
+
+    sorted_players = sorted(players.items(), key=lambda x: x[1].role)
+
+    table_data = []
+    for player_name, player_info in sorted_players:
+        color = ROLE_COLORS.get(player_info.role, Fore.WHITE)
+        table_data.append([player_name, f"{color}{player_info.role}{Style.RESET_ALL}"])
+
+    print(tabulate(table_data, headers=["Player Name", "Role"], tablefmt="grid"))
 
 
 def get_chat_log(
@@ -146,7 +160,6 @@ def get_role_specific_game_state(game_state: GameState, name: str, role: str):
         ],
         "phase": game_state.phase,
         # "day_number": game_state.day,
-        # "identity": name,
         "eliminations": game_state.eliminations,
         "most_recent_elimination": (
             game_state.eliminations[-1] if game_state.eliminations else None
@@ -154,7 +167,7 @@ def get_role_specific_game_state(game_state: GameState, name: str, role: str):
     }
 
     if role == MAFIA_ROLE:
-        formatted_game_state["mafia_members"] = [
+        formatted_game_state["mafia_teammates"] = [
             player_name
             for player_name, player_info in game_state.players.items()
             if player_info.role == MAFIA_ROLE
@@ -162,9 +175,6 @@ def get_role_specific_game_state(game_state: GameState, name: str, role: str):
             and player_name != name
         ]
         formatted_game_state["mafia_target"] = game_state.mafia_target
-        formatted_game_state["potential_mafia_targets"] = (
-            game_state.potential_mafia_targets
-        )
     elif role == DETECTIVE_ROLE:
         formatted_game_state["investigations"] = game_state.investigation_history
     elif role == DOCTOR_ROLE:
@@ -189,7 +199,7 @@ def update_mafia_target(game_state: GameState, target_name: str) -> None:
     game_state.mafia_target = target_name
 
 
-def update_eliminations(game_state: GameState, role: str, player_name: str) -> None:
+def update_eliminations(game_state: GameState, player_name: str) -> None:
     game_state.eliminations.append(player_name)
     game_state.players[player_name].status = "eliminated"
 
@@ -230,18 +240,9 @@ def get_mafia_target(game_state: GameState) -> str:
     return game_state.mafia_target
 
 
-def set_potential_mafia_targets(
-    game_state: GameState, potential_mafia_targets: List[str]
-) -> None:
-    game_state.potential_mafia_targets = potential_mafia_targets
-
-
 def get_llm_output_parser(base_model):
     return JsonOutputParser(pydantic_object=base_model)
 
 
-def reset_potential_mafia_targets(game_state: GameState) -> None:
-    game_state.potential_mafia_targets = []
-
-narrator_parser = get_llm_output_parser(ConversationalResponse)
-common_parser = get_llm_output_parser(ActionResponse)
+narrator_parser = get_llm_output_parser(NarratorResponse)
+common_parser = get_llm_output_parser(ConversationalResponse)

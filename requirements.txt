@@ -6,3 +6,6 @@ rich
 pydantic
 langchain
 langchain_ollama
+langchain_core
+tabulate
+stamina

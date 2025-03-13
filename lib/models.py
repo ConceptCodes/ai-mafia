@@ -1,21 +1,22 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Union
+from collections import Counter
 
 
-class ActionResponse(BaseModel):
+class ConversationalResponse(BaseModel):
     """
-    A Response to a prompt that requires selecting a player and providing an explanation
+    A Response that requires selecting a player and providing an explanation
     """
 
-    player_name: str = Field(..., description="The name of the player")
+    player_name: str = Field(..., description="The name of the player your selecting")
     message: str = Field(
         ..., description="Your explanation behind your choice of player"
     )
 
 
-class ConversationalResponse(BaseModel):
+class NarratorResponse(BaseModel):
     """
-    A Response to a prompt that requires just a message
+    A Response that requires just a message
     """
 
     message: str = Field(..., description="The response to the prompt")
@@ -25,7 +26,7 @@ class ConversationalResponse(BaseModel):
 class LLMResponse(BaseModel):
     output: Union[
         ConversationalResponse,
-        ActionResponse,
+        NarratorResponse,
     ]
 
 
@@ -65,6 +66,33 @@ class GameState(BaseModel):
     chat_logs: Dict[str, List[ChatLogEntry]] = {}
     eliminations: List[str] = []
     mafia_target: str = None
-    potential_mafia_targets: List[str] = []
     investigation_history: List[InvestigateAction] = []
     protections: List[str] = []
+
+
+class ConversationState:
+    def __init__(self, agents):
+        self.decisions = {agent.name: None for agent in agents}
+        self.rounds = 0
+
+    def update_decision(self, agent_name, decision):
+        """Update the decision of an agent."""
+        self.decisions[agent_name] = decision
+
+    def check_consensus(self):
+        """Check if all agents have selected the same user."""
+        values = list(self.decisions.values())
+        if None in values:
+            return False, None  # Not all agents have made a decision
+        counter = Counter(values)
+        most_common = counter.most_common(1)[0]  # Get the most common decision
+        if most_common[1] == len(self.decisions):
+            return True, most_common[0]  # Consensus reached
+        return False, None  # No consensus yet
+
+    def print_state(self):
+        print(f"Current Decisions: {self.decisions}")
+
+    def clear(self):
+        self.decisions = None
+        self.rounds = 0

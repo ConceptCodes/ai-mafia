@@ -1,3 +1,5 @@
+from collections import deque
+
 from agents.detective import DetectiveAgent
 from agents.doctor import DoctorAgent
 from agents.mafia import MafiaAgent
@@ -15,6 +17,7 @@ from lib.constants import (
     CHAT_LOG_DOCTOR_NARRATOR,
 )
 from lib.utils import (
+    display_players,
     get_current_day,
     get_current_phase,
     get_last_protection,
@@ -25,15 +28,16 @@ from lib.utils import (
     post_message,
     is_alive,
     reset_mafia_target,
-    reset_potential_mafia_targets,
     set_current_phase,
-    set_potential_mafia_targets,
     update_day,
     update_eliminations,
     update_mafia_target,
     update_protections,
 )
-from lib.models import GameState
+from lib.models import (
+    ConversationState,
+    GameState,
+)
 
 
 class GameManager:
@@ -92,6 +96,7 @@ class GameManager:
         ]
 
     def run_game(self):
+        display_players(self.game_state)
         while not self.check_win_condition():
             current_phase = get_current_phase(self.game_state)
             if current_phase == "night":
@@ -109,9 +114,7 @@ class GameManager:
 
         if self.game_state.day == 1 and self.game_state.phase == "night":
             players = get_players(self.game_state)
-            narrator = next(
-                player for player in players.values() if player.role == NARRATOR_ROLE
-            )
+            narrator = players.get("Narrator")
             narrator.agent.act("night", goal="introduce")
 
         self.mafia_discussion_and_target_selection()
@@ -119,78 +122,64 @@ class GameManager:
         self.detective_investigation()
         self.resolve_night_actions()
 
-    def mafia_discussion_and_target_selection(self):
-        print(f"\n{Fore.RED}[ Mafia Discussion ]{Style.RESET_ALL}")
-        mafia_agents = self.get_mafia_agents()
-
-        # Step 1: Collect Suggestions
-        suggestions = set()
-        for player in mafia_agents:
-            try:
-                suggestion = player.act(phase="night", goal="suggest")
-                suggestions.add(suggestion)
-            except ValueError as e:
-                pass  # TODO: retry mechanism needed!
-
-        set_potential_mafia_targets(self.game_state, list(suggestions))
-
-        print("\nMafia Suggestions:")
-        for target in suggestions:
-            print(target)
-
-        # Step 2: Vote on Targets
-        print(f"\n{Fore.RED}[ Mafia Voting ]{Style.RESET_ALL}")
-        votes = {}
-        for agent in mafia_agents:
-            try:
-                player_name = agent.act(phase="night", goal="vote")
-                votes[player_name] = votes.get(player_name, 0) + 1
-            except ValueError as e:
-                pass  # TODO: retry mechanism needed!
-
-        # Log the votes
-        print("\nMafia Votes:")
-        for target, count in votes.items():
-            print(f"{target}: {count} votes")
-
-        # Step 3: Select Target
-        if votes:
-            mafia_target = max(votes, key=votes.get)
-            post_message(
-                game_state=self.game_state,
-                chat_log_key=CHAT_LOG_MAFIA,
-                player_name=None,
-                message=f"Selected target: {mafia_target}",
-            )
-        else:
-            mafia_target = None
+    def mafia_choose_target(self, mafia_target):
+        post_message(
+            game_state=self.game_state,
+            chat_log_key=CHAT_LOG_MAFIA,
+            player_name=None,
+            message=f"Selected target: {mafia_target}",
+        )
         update_mafia_target(game_state=self.game_state, target_name=mafia_target)
+        return
+
+    def discuss_and_choose_target(self, agents: list, phase: str):
+        max_rounds = 5
+        agent_queue = deque(agents)
+        state_manager = ConversationState(agents)
+
+        for _ in range(max_rounds):
+            print(f"\n--- Round {state_manager.rounds + 1} ---")
+            while agent_queue:
+                agent = agent_queue.popleft()
+                response = agent.act(phase=phase, goal="suggest")
+                print(response)
+                state_manager.update_decision(agent.name, response.player_name)
+
+                # Check for consensus
+                consensus_reached, selected_user = state_manager.check_consensus()
+                if consensus_reached:
+                    print(f"\n✅ Consensus Reached! Selected User: {selected_user}")
+                    return selected_user
+
+            state_manager.rounds += 1
+            agent_queue.extend(agents)
+
+        print("\n❌ Consensus not reached.")
+        state_manager.clear()
+
+    def mafia_discussion_and_target_selection(self):
+        print(f"\n{Fore.RED}[ Mafia Discussion and Target Selection ]{Style.RESET_ALL}")
+
+        mafia_agents = self.get_mafia_agents()
+        mafia_target = self.discuss_and_choose_target(mafia_agents, "night")
+
+        self.mafia_choose_target(mafia_target)
 
     def doctor_protection(self):
         print(f"\n{Fore.BLUE}Doctor Protection{Style.RESET_ALL}")
         protection_target = None
         players = get_players(game_state=self.game_state)
-        doctor = next(
-            (
-                (player_name, player_info)
-                for player_name, player_info in players.items()
-                if player_info.role == DOCTOR_ROLE
-                and is_alive(game_state=self.game_state, player_name=player_name)
-            ),
-            None,
-        )
+        doctor = players.get("Doctor")
 
-        if doctor is None:
+        if is_alive(game_state=self.game_state, player_name=doctor.name) is False:
             print("Doctor is not alive.")
             return
 
-        player_name, player_info = doctor
-
-        protection_target = player_info.agent.act(phase="night")
+        protection_target = doctor.agent.act(phase="night")
         post_message(
             game_state=self.game_state,
             chat_log_key=CHAT_LOG_DOCTOR_NARRATOR,
-            player_name=player_name,
+            player_name=doctor.name,
             message=f"Protected {protection_target}",
         )
         update_protections(game_state=self.game_state, player_name=protection_target)
@@ -198,16 +187,10 @@ class GameManager:
     def detective_investigation(self):
         print(f"\n{Fore.BLACK + Style.BRIGHT}Detective Investigation{Style.RESET_ALL}")
         players = get_players(self.game_state)
-        detective = next(
-            (player_name, player_info)
-            for player_name, player_info in players.items()
-            if player_info.role == DETECTIVE_ROLE
-            and is_alive(game_state=self.game_state, player_name=player_name)
-        )
-        if detective is None:
+        detective = players.get("Detective")
+        if is_alive(self.game_state, detective.name) is False:
             return
-        _, _detective = detective
-        _detective.agent.act(phase="night")
+        detective.agent.act(phase="night")
 
     def resolve_night_actions(self):
         print(f"\n{Fore.MAGENTA}Resolve Night Actions{Style.RESET_ALL}")
@@ -215,9 +198,7 @@ class GameManager:
         protection_target = get_last_protection(self.game_state)
 
         if mafia_target and mafia_target != protection_target:
-            update_eliminations(
-                game_state=self.game_state, role=MAFIA_ROLE, player_name=mafia_target
-            )
+            update_eliminations(game_state=self.game_state, player_name=mafia_target)
             print(
                 f"{Fore.RED}{mafia_target} was eliminated during the night.{Style.RESET_ALL}"
             )
@@ -227,54 +208,30 @@ class GameManager:
             )
 
         reset_mafia_target(self.game_state)
-        reset_potential_mafia_targets(self.game_state)
 
     def day_phase(self):
         print(
             f"\n============ {Fore.CYAN}Day {get_current_day(self.game_state)} begins.{Style.RESET_ALL} ============"
         )
 
-        # Narrator announces night events
         players = get_players(self.game_state)
-        narrator = next(
-            (player_name, player_info)
-            for player_name, player_info in players.items()
-            if player_info.role == NARRATOR_ROLE
-        )
-        _, _narrator = narrator
-        _narrator.agent.act(phase="day")
+        narrator = players.get("Narrator")
+        narrator.agent.act(phase="day")
 
-        # Players communicate
-        for player_name, player_info in players.items():
-            if (
-                is_alive(game_state=self.game_state, player_name=player_name)
-                and player_info.role != NARRATOR_ROLE
-            ):
-                player_info.agent.act(phase="day", goal="communicate")
+        narrator_excluded = {
+            player_name: info
+            for player_name, info in players.items()
+            if player_name != "Narrator"
+        }
 
-        self.resolve_day_actions()
+        target = self.discuss_and_choose_target(narrator_excluded, "day")
 
-    def resolve_day_actions(self):
         print(f"\n{Fore.MAGENTA}Resolve Day Actions{Style.RESET_ALL}")
 
-        # Voting logic
-        votes = {}
-        players = get_players(self.game_state)
-
-        for player_name, player_info in players.items():
-            if player_info.role != NARRATOR_ROLE and is_alive(
-                game_state=self.game_state, player_name=player_name
-            ):
-                chosen = player_info.agent.act(phase="day", goal="vote")
-                votes[chosen] = votes.get(chosen, 0) + 1
-
-        # Determine player to eliminate
-        if votes:
-            eliminated_player = max(votes, key=votes.get)
-            update_eliminations(self.game_state, "public", eliminated_player)
-
+        if target:
+            update_eliminations(self.game_state, target)
             print(
-                f"{Fore.MAGENTA}{eliminated_player} was eliminated by a majority vote.{Style.RESET_ALL}"
+                f"{Fore.MAGENTA}{target} was eliminated by a majority decision.{Style.RESET_ALL}"
             )
 
     def check_win_condition(self):

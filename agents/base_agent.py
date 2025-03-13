@@ -1,9 +1,10 @@
+import stamina
 from halo import Halo
-from rich.console import Console
 from langchain_core.language_models.llms import LLM
+from typing import Union
 
 
-from lib.models import GameState, LLMResponse
+from lib.models import ConversationalResponse, GameState, NarratorResponse
 import lib.prompts as prompts
 from lib.utils import (
     add_to_chat_log,
@@ -22,10 +23,8 @@ from lib.constants import (
     DOCTOR_ROLE,
     MAFIA_ROLE,
     NARRATOR_ROLE,
+    VILLAGER_ROLE,
 )
-
-
-console = Console()
 
 
 class BaseAgent:
@@ -56,16 +55,19 @@ class BaseAgent:
 
     def get_prompt_template(self):
         role_mapping = {
-            "narrator": prompts.narrator_template,
-            "detective": prompts.detective_template,
-            "doctor": prompts.doctor_template,
-            "mafia": prompts.mafia_template,
-            "villager": prompts.villager_template,
+            NARRATOR_ROLE: prompts.narrator_template,
+            DETECTIVE_ROLE: prompts.detective_template,
+            DOCTOR_ROLE: prompts.doctor_template,
+            MAFIA_ROLE: prompts.mafia_template,
+            VILLAGER_ROLE: prompts.villager_template,
         }
 
         return role_mapping[self.role]
 
+    @stamina.retry(on=Exception, attempts=2)
     def act(self, task_description: str, phase: str, goal=None):
+        response = None
+
         chat_logs = get_role_specific_chat_log(
             game_state=self.game_state, role=self.role, should_reverse=False
         )
@@ -73,8 +75,8 @@ class BaseAgent:
             game_state=self.game_state, name=self.name, role=self.role
         )
 
-        # spinner = Halo(text=f"\n{self.name}: {task_description}", spinner="dots")
-        # spinner.start()
+        spinner = Halo(text=f"\n{self.name}: {task_description}", spinner="dots")
+        spinner.start()
 
         response = self.llm_chain.invoke(
             {
@@ -85,28 +87,38 @@ class BaseAgent:
             }
         )
 
-        if self.role == NARRATOR_ROLE:
-            message = response["message"] if response["message"] else ""
-            player_name = None
-        else:
-            message = response["message"] if response["message"] else ""
-            player_name = response["player_name"] if response["player_name"] else ""
+        if response is None:
+            raise Exception(" response is None")
 
-        # spinner.stop()
+        if self.role == NARRATOR_ROLE:
+            if response["message"] == None:
+                raise Exception("Narrator response is None")
+            response = NarratorResponse(message=response["message"])
+        else:
+            if response["message"] == None or response["player_name"] == None:
+                raise Exception("Player response is None")
+            response = ConversationalResponse(
+                player_name=response["player_name"],
+                message=response["message"],
+            )
+
+        spinner.stop()
         if phase == "night":
             if self.role == MAFIA_ROLE:
-                self.send_message(message=message, chat_log_key=CHAT_LOG_MAFIA)
+                self.send_message(message=response.message, chat_log_key=CHAT_LOG_MAFIA)
             elif self.role == DOCTOR_ROLE:
                 self.send_message(
-                    message=message, chat_log_key=CHAT_LOG_DOCTOR_NARRATOR
+                    message=response.message, chat_log_key=CHAT_LOG_DOCTOR_NARRATOR
                 )
             elif self.role == DETECTIVE_ROLE:
                 self.send_message(
-                    message=message, chat_log_key=CHAT_LOG_DETECTIVE_NARRATOR
+                    message=response.message, chat_log_key=CHAT_LOG_DETECTIVE_NARRATOR
                 )
             else:
-                self.send_message(message=message, chat_log_key=CHAT_LOG_PUBLIC)
+                self.send_message(
+                    message=response.message, chat_log_key=CHAT_LOG_PUBLIC
+                )
         else:
-            self.send_message(message=message, chat_log_key=CHAT_LOG_PUBLIC)
+            self.send_message(message=response.message, chat_log_key=CHAT_LOG_PUBLIC)
 
-        return (player_name, message)
+        return response

@@ -13,24 +13,19 @@ class MafiaAgent(BaseAgent):
     def act(self, phase, goal):
         if phase == "night":
             if goal == "suggest":
-                task_description = "Suggest a non-Mafia player for elimination. "
-                (player_name, _) = super().act(task_description, phase)
-                if player_name in self.mafia_team:
-                    raise ValueError("Mafia cannot target themselves.")
-                return player_name
-            elif goal == "vote":
-                task_description = (
-                    "Cast your vote for elimination from the pool of potential targets. "
-                    "Ensure alignment with your team's objectives."
-                )
-                (player_name, _) = super().act(task_description, phase)
-                return player_name
+                task_description = "Engage in discussions with your Mafia teammates to select a target for elimination. "
+                response = super().act(task_description, phase)
+                if response.player_name in self.mafia_team:
+                    self.act(phase, goal)
         else:
             task_description = (
                 "Engage in discussions to identify potential Mafia members. "
-                "Share your suspicions and observations, aiming to mislead non-Mafia players while protecting your teams true identity. "
                 "Remember you are talking in a public chat, so be careful with your words. "
-                "If you are the target of suspicion, respond with tact and discretion, carefully balancing your insights without revealing your role or identity."
+                "If you are the target of suspicion, respond with tact and discretion, carefully balancing your insights without revealing your role or identity. "
             )
-            (player_name, _) = super().act(task_description, phase)
-            return player_name
+            response = super().act(task_description, phase)
+
+            if response.player_name in self.mafia_team:
+                self.act(phase, goal)
+
+            return response.player_name
